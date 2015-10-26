@@ -1,5 +1,7 @@
 #!/bin/bash 
 
+set -e
+
 get_batch_options() {
     local arguments=($@)
 
@@ -39,9 +41,13 @@ get_batch_options() {
 
 get_batch_options $@
 
-StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
+if [ -z ${StudyFolder} ]; then
+    echo "StudyFolder parameter not exported. This is the location of Subject folders (named by subject id)"
+    exit 1
+fi
+
 Subjlist="100307" #Space delimited list of subject IDs
-EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+: ${EnvironmentScript:="`dirname $0`/SetUpHCPPipeline.sh"} #Pipeline environment script
 
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
