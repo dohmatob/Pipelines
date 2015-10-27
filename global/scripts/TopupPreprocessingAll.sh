@@ -10,7 +10,6 @@ set -xv
 # --------------------------------------------------------------------------------
 #  Load Function Libraries
 # --------------------------------------------------------------------------------
-
 source $HCPPIPEDIR_Global/log.shlib # Logging related functions
 
 Usage() {

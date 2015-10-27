@@ -2,6 +2,16 @@
 
 set -e
 
+help () {
+    echo
+    echo "fMRIVolume example pipeline."
+    echo "Example Usage:"
+    echo "DISABLE_RFMRI=1 StudyFolder=~/raw_hcp/storage/data/HCP/S500-1 $0 --runlocal"
+    echo
+    exit 0
+}
+
+
 get_batch_options() {
     local arguments=($@)
 
@@ -12,7 +22,6 @@ get_batch_options() {
     local index=0
     local numArgs=${#arguments[@]}
     local argument
-
     while [ ${index} -lt ${numArgs} ]; do
         argument=${arguments[index]}
 
@@ -29,6 +38,9 @@ get_batch_options() {
                 command_line_specified_run_local="TRUE"
                 index=$(( index + 1 ))
                 ;;
+	    --help)
+		help
+		;;
 	    *)
 		echo ""
 		echo "ERROR: Unrecognized Option: ${argument}"
@@ -42,7 +54,7 @@ get_batch_options() {
 get_batch_options $@
 
 if [ -z ${StudyFolder} ]; then
-    echo "StudyFolder parameter not exported. This is the location of Subject folders (named by subject id)"
+    echo "Error: StudyFolder parameter not exported. This is the location of Subject folders (named by subject id)."
     exit 1
 fi
 
@@ -130,22 +142,23 @@ PRINTCOM=""
 # same number of (space-delimited) elements.
 Tasklist=""
 PhaseEncodinglist=""
+if [ -z ${DISABLE_RFMRI} ] || [ ${DISABLE_RFMRI} = "0" ]; then
+    Tasklist="${Tasklist} rfMRI_REST1_RL"
+    PhaseEncodinglist="${PhaseEncodinglist} x"
 
-Tasklist="${Tasklist} rfMRI_REST1_RL"
-PhaseEncodinglist="${PhaseEncodinglist} x"
-
-Tasklist="${Tasklist} rfMRI_REST1_LR"
-PhaseEncodinglist="${PhaseEncodinglist} x-"
-
-Tasklist="${Tasklist} rfMRI_REST2_RL"
-PhaseEncodinglist="${PhaseEncodinglist} x"
-
-Tasklist="${Tasklist} rfMRI_REST2_LR"
-PhaseEncodinglist="${PhaseEncodinglist} x-"
+    Tasklist="${Tasklist} rfMRI_REST1_LR"
+    PhaseEncodinglist="${PhaseEncodinglist} x-"
+    
+    Tasklist="${Tasklist} rfMRI_REST2_RL"
+    PhaseEncodinglist="${PhaseEncodinglist} x"
+    
+    Tasklist="${Tasklist} rfMRI_REST2_LR"
+    PhaseEncodinglist="${PhaseEncodinglist} x-"
+fi
 
 Tasklist="${Tasklist} tfMRI_EMOTION_RL"
 PhaseEncodinglist="${PhaseEncodinglist} x"
-
+    
 Tasklist="${Tasklist} tfMRI_EMOTION_LR"
 PhaseEncodinglist="${PhaseEncodinglist} x-"
 
@@ -207,11 +220,15 @@ for Subject in $Subjlist ; do
     echo "  ${fMRIName}"
     UnwarpDir=`echo $PhaseEncodinglist | cut -d " " -f $i`
     fMRITimeSeries="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_${fMRIName}.nii.gz"
+    [ ! -e ${fMRITimeSeries} ] && echo "Input file ${fMRITimeSeries} doesn't exist; skipping." && continue
     fMRISBRef="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_${fMRIName}_SBRef.nii.gz" #A single band reference image (SBRef) is recommended if using multiband, set to NONE if you want to use the first volume of the timeseries for motion correction
+    [ ! -e ${fMRISBRef} ] && echo "Input file ${fMRISBRef} doesn't exist; skipping." && continue
     DwellTime="0.00058" #Echo Spacing or Dwelltime of fMRI image, set to NONE if not used. Dwelltime = 1/(BandwidthPerPixelPhaseEncode * # of phase encoding samples): DICOM field (0019,1028) = BandwidthPerPixelPhaseEncode, DICOM field (0051,100b) AcquisitionMatrixText first value (# of phase encoding samples).  On Siemens, iPAT/GRAPPA factors have already been accounted for.   
     DistortionCorrection="TOPUP" # FIELDMAP, SiemensFieldMap, GeneralElectricFieldMap, or TOPUP: distortion correction is required for accurate processing
     SpinEchoPhaseEncodeNegative="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_SpinEchoFieldMap_LR.nii.gz" #For the spin echo field map volume with a negative phase encoding direction (LR in HCP data, AP in 7T HCP data), set to NONE if using regular FIELDMAP
+    [ ! -e ${SpinEchoPhaseEncodeNegative} ] && echo "Input file ${SpinEchoPhaseEncodeNegative} doesn't exist; skipping." && continue
     SpinEchoPhaseEncodePositive="${StudyFolder}/${Subject}/unprocessed/3T/${fMRIName}/${Subject}_3T_SpinEchoFieldMap_RL.nii.gz" #For the spin echo field map volume with a positive phase encoding direction (RL in HCP data, PA in 7T HCP data), set to NONE if using regular FIELDMAP
+    [ ! -e ${SpinEchoPhaseEncodePositive} ] && echo "Input file ${SpinEchoPhaseEncodePositive} doesn't exist; skipping." && continue
     MagnitudeInputName="NONE" #Expects 4D Magnitude volume with two 3D timepoints, set to NONE if using TOPUP
     PhaseInputName="NONE" #Expects a 3D Phase volume, set to NONE if using TOPUP
 
