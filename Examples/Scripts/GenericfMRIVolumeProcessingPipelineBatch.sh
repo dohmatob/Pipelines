@@ -16,6 +16,7 @@ get_batch_options() {
     local arguments=($@)
 
     unset command_line_specified_study_folder
+    unset command_line_specified_output_folder
     unset command_line_specified_subj_list
     unset command_line_specified_run_local
 
@@ -28,6 +29,10 @@ get_batch_options() {
         case ${argument} in
             --StudyFolder=*)
                 command_line_specified_study_folder=${argument/*=/""}
+                index=$(( index + 1 ))
+                ;;
+            --OutputFolder=*)
+                command_line_specified_output_folder=${argument/*=/""}
                 index=$(( index + 1 ))
                 ;;
             --Subjlist=*)
@@ -53,16 +58,16 @@ get_batch_options() {
 
 get_batch_options $@
 
-if [ -z ${StudyFolder} ]; then
-    echo "Error: StudyFolder parameter not exported. This is the location of Subject folders (named by subject id)."
-    exit 1
-fi
 
 Subjlist="100307" #Space delimited list of subject IDs
 : ${EnvironmentScript:="`dirname $0`/SetUpHCPPipeline.sh"} #Pipeline environment script
 
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
+fi
+
+if [ -n "${command_line_specified_output_folder}" ]; then
+    OutputFolder="${command_line_specified_output_folder}"
 fi
 
 if [ -n "${command_line_specified_subj_list}" ]; then
@@ -256,7 +261,7 @@ for Subject in $Subjlist ; do
     fi
 
     ${queuing_command} ${HCPPIPEDIR}/fMRIVolume/GenericfMRIVolumeProcessingPipeline.sh \
-      --path=$StudyFolder \
+      --path=$OutputFolder \
       --subject=$Subject \
       --fmriname=$fMRIName \
       --fmritcs=$fMRITimeSeries \

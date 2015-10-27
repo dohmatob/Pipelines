@@ -115,8 +115,8 @@ ResultsFolder="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 
 fMRIFolder="$Path"/"$Subject"/"$NameOffMRI"
 if [ ! -e "$fMRIFolder" ] ; then
-  log_Msg "mkdir ${fMRIFolder}"
-  mkdir "$fMRIFolder"
+  log_Msg "mkdir -p ${fMRIFolder}"
+  mkdir -p "$fMRIFolder"
 fi
 cp "$fMRITimeSeries" "$fMRIFolder"/"$OrigTCSName".nii.gz
 
