@@ -47,7 +47,8 @@ fi
 log_Msg "Parsing Command Line Options"
 
 # parse arguments
-Path=`opts_GetOpt1 "--path" $@`
+InputFolder=`opts_GetOpt1 "--inputfolder" $@`
+OutputFolder=`opts_GetOpt1 "--outputfolder" $@`
 Subject=`opts_GetOpt1 "--subject" $@`
 NameOffMRI=`opts_GetOpt1 "--fmriname" $@`
 fMRITimeSeries=`opts_GetOpt1 "--fmritcs" $@`
@@ -109,11 +110,11 @@ JacobianOut="Jacobian"
 
 ########################################## DO WORK ########################################## 
 
-T1wFolder="$Path"/"$Subject"/"$T1wFolder"
-AtlasSpaceFolder="$Path"/"$Subject"/"$AtlasSpaceFolder"
+T1wFolder="$InputFolder"/"$Subject"/"$T1wFolder"
+AtlasSpaceFolder="$InputFolder"/"$Subject"/"$AtlasSpaceFolder"
 ResultsFolder="$AtlasSpaceFolder"/"$ResultsFolder"/"$NameOffMRI"
 
-fMRIFolder="$Path"/"$Subject"/"$NameOffMRI"
+fMRIFolder="$OutputFolder"/"$Subject"/"$NameOffMRI"
 if [ ! -e "$fMRIFolder" ] ; then
   log_Msg "mkdir -p ${fMRIFolder}"
   mkdir -p "$fMRIFolder"
