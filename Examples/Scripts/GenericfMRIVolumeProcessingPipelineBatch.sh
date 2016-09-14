@@ -5,6 +5,7 @@ get_batch_options() {
 
     unset command_line_specified_study_folder
     unset command_line_specified_subj_list
+    unset command_line_specified_task_list    
     unset command_line_specified_run_local
 
     local index=0
@@ -23,6 +24,10 @@ get_batch_options() {
                 command_line_specified_subj_list=${argument/*=/""}
                 index=$(( index + 1 ))
                 ;;
+            --Tasklist=*)
+                command_line_specified_task_list=${argument/*=/""}
+                index=$(( index + 1 ))
+                ;;	    
             --runlocal)
                 command_line_specified_run_local="TRUE"
                 index=$(( index + 1 ))
@@ -40,8 +45,9 @@ get_batch_options() {
 get_batch_options "$@"
 
 StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
-Subjlist="100307" #Space delimited list of subject IDs
-EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+Subjlist="100307" # Space delimited list of subject IDs
+Tasklist="MOTOR" # Space delimited list of task names
+EnvironmentScript="Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
@@ -49,6 +55,10 @@ fi
 
 if [ -n "${command_line_specified_subj_list}" ]; then
     Subjlist="${command_line_specified_subj_list}"
+fi
+
+if [ -n "${command_line_specified_task_list}" ]; then
+    Tasklist="${command_line_specified_task_list}"
 fi
 
 # Requirements for this script
@@ -127,62 +137,16 @@ PRINTCOM=""
 # The PhaseEncodinglist contains phase encoding direction indicators for each corresponding
 # task in the Tasklist.  Therefore, the Tasklist and the PhaseEncodinglist should have the
 # same number of (space-delimited) elements.
-Tasklist=""
+FinalTasklist=""
 PhaseEncodinglist=""
 
-Tasklist="${Tasklist} rfMRI_REST1_RL"
-PhaseEncodinglist="${PhaseEncodinglist} x"
-
-Tasklist="${Tasklist} rfMRI_REST1_LR"
-PhaseEncodinglist="${PhaseEncodinglist} x-"
-
-Tasklist="${Tasklist} rfMRI_REST2_RL"
-PhaseEncodinglist="${PhaseEncodinglist} x"
-
-Tasklist="${Tasklist} rfMRI_REST2_LR"
-PhaseEncodinglist="${PhaseEncodinglist} x-"
-
-Tasklist="${Tasklist} tfMRI_EMOTION_RL"
-PhaseEncodinglist="${PhaseEncodinglist} x"
-
-Tasklist="${Tasklist} tfMRI_EMOTION_LR"
-PhaseEncodinglist="${PhaseEncodinglist} x-"
-
-Tasklist="${Tasklist} tfMRI_GAMBLING_RL"
-PhaseEncodinglist="${PhaseEncodinglist} x"
-
-Tasklist="${Tasklist} tfMRI_GAMBLING_LR"
-PhaseEncodinglist="${PhaseEncodinglist} x-"
-
-Tasklist="${Tasklist} tfMRI_LANGUAGE_RL"
-PhaseEncodinglist="${PhaseEncodinglist} x"
-
-Tasklist="${Tasklist} tfMRI_LANGUAGE_LR"
-PhaseEncodinglist="${PhaseEncodinglist} x-"
-
-Tasklist="${Tasklist} tfMRI_MOTOR_RL"
-PhaseEncodinglist="${PhaseEncodinglist} x"
-
-Tasklist="${Tasklist} tfMRI_MOTOR_LR"
-PhaseEncodinglist="${PhaseEncodinglist} x-"
-
-Tasklist="${Tasklist} tfMRI_RELATIONAL_RL"
-PhaseEncodinglist="${PhaseEncodinglist} x"
-
-Tasklist="${Tasklist} tfMRI_RELATIONAL_LR"
-PhaseEncodinglist="${PhaseEncodinglist} x-"
-
-Tasklist="${Tasklist} tfMRI_SOCIAL_RL"
-PhaseEncodinglist="${PhaseEncodinglist} x"
-
-Tasklist="${Tasklist} tfMRI_SOCIAL_LR"
-PhaseEncodinglist="${PhaseEncodinglist} x-"
-
-Tasklist="${Tasklist} tfMRI_WM_RL"
-PhaseEncodinglist="${PhaseEncodinglist} x"
-
-Tasklist="${Tasklist} tfMRI_WM_LR"
-PhaseEncodinglist="${PhaseEncodinglist} x-"
+for task in $Tasklist; do
+    FinalTasklist="${FinalTasklist} tfMRI_${task}_RL"
+    PhaseEncodinglist="${PhaseEncodinglist} x"
+    # FinalTasklist="${FinalTasklist} tfMRI_${task}_LR"
+    # PhaseEncodinglist="${PhaseEncodinglist} x-"
+done
+Tasklist=${FinalTasklist}
 
 # Verify that Tasklist and PhaseEncodinglist have the same number of elements
 TaskArray=($Tasklist)
