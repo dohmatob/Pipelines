@@ -41,7 +41,7 @@ get_batch_options "$@"
 
 StudyFolder="${HOME}/projects/Pipelines_ExampleData" #Location of Subject folders (named by subjectID)
 Subjlist="100307" #Space delimited list of subject IDs
-EnvironmentScript="${HOME}/projects/Pipelines/Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
+EnvironmentScript="Examples/Scripts/SetUpHCPPipeline.sh" #Pipeline environment script
 
 if [ -n "${command_line_specified_study_folder}" ]; then
     StudyFolder="${command_line_specified_study_folder}"
@@ -76,24 +76,24 @@ PRINTCOM=""
 ######################################### DO WORK ##########################################
 
 Tasklist=""
-Tasklist="${Tasklist} rfMRI_REST1_RL"
-Tasklist="${Tasklist} rfMRI_REST1_LR"
-Tasklist="${Tasklist} rfMRI_REST2_RL"
-Tasklist="${Tasklist} rfMRI_REST2_LR"
-Tasklist="${Tasklist} tfMRI_EMOTION_RL"
-Tasklist="${Tasklist} tfMRI_EMOTION_LR"
-Tasklist="${Tasklist} tfMRI_GAMBLING_RL"
-Tasklist="${Tasklist} tfMRI_GAMBLING_LR"
-Tasklist="${Tasklist} tfMRI_LANGUAGE_RL"
-Tasklist="${Tasklist} tfMRI_LANGUAGE_LR"
+# Tasklist="${Tasklist} rfMRI_REST1_RL"
+# Tasklist="${Tasklist} rfMRI_REST1_LR"
+# Tasklist="${Tasklist} rfMRI_REST2_RL"
+# Tasklist="${Tasklist} rfMRI_REST2_LR"
+# Tasklist="${Tasklist} tfMRI_EMOTION_RL"
+# Tasklist="${Tasklist} tfMRI_EMOTION_LR"
+# Tasklist="${Tasklist} tfMRI_GAMBLING_RL"
+# Tasklist="${Tasklist} tfMRI_GAMBLING_LR"
+# Tasklist="${Tasklist} tfMRI_LANGUAGE_RL"
+# Tasklist="${Tasklist} tfMRI_LANGUAGE_LR"
 Tasklist="${Tasklist} tfMRI_MOTOR_RL"
-Tasklist="${Tasklist} tfMRI_MOTOR_LR"
-Tasklist="${Tasklist} tfMRI_RELATIONAL_RL"
-Tasklist="${Tasklist} tfMRI_RELATIONAL_LR"
-Tasklist="${Tasklist} tfMRI_SOCIAL_RL"
-Tasklist="${Tasklist} tfMRI_SOCIAL_LR"
-Tasklist="${Tasklist} tfMRI_WM_RL"
-Tasklist="${Tasklist} tfMRI_WM_LR"
+# Tasklist="${Tasklist} tfMRI_MOTOR_LR"
+# Tasklist="${Tasklist} tfMRI_RELATIONAL_RL"
+# Tasklist="${Tasklist} tfMRI_RELATIONAL_LR"
+# Tasklist="${Tasklist} tfMRI_SOCIAL_RL"
+# Tasklist="${Tasklist} tfMRI_SOCIAL_LR"
+# Tasklist="${Tasklist} tfMRI_WM_RL"
+# Tasklist="${Tasklist} tfMRI_WM_LR"
 
 for Subject in $Subjlist ; do
   echo $Subject
