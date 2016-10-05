@@ -117,7 +117,6 @@ UseJacobian=`opts_GetOpt1 "--usejacobian" $@`
 # Convert UseJacobian value to all lowercase (to allow the user the flexibility to use True, true, TRUE, False, False, false, etc.)
 UseJacobian="$(echo ${UseJacobian} | tr '[:upper:]' '[:lower:]')"
 log_Msg "UseJacobian: ${UseJacobian}"
-
 MotionCorrectionType=`opts_GetOpt1 "--mctype" $@`  # use = "FLIRT" to run FLIRT-based mcflirt_acc.sh, or "MCFLIRT" to run MCFLIRT-based mcflirt.sh
 MotionCorrectionType=`opts_DefaultOpt $MotionCorrectionType MCFLIRT` #use mcflirt by default
 
@@ -288,24 +287,24 @@ fi
 
 log_Msg "mkdir -p ${fMRIFolder}/MotionCorrection"
 mkdir -p "$fMRIFolder"/MotionCorrection
-${RUN} "$PipelineScripts"/MotionCorrection.sh \
-    "$fMRIFolder"/MotionCorrection \
-    "$fMRIFolder"/"$NameOffMRI"_gdc \
-    "$fMRIFolder"/"$ScoutName"_gdc \
-    "$fMRIFolder"/"$NameOffMRI"_mc \
-    "$fMRIFolder"/"$MovementRegressor" \
-    "$fMRIFolder"/"$MotionMatrixFolder" \
-    "$MotionMatrixPrefix" \
-    "$MotionCorrectionType"
+# ${RUN} "$PipelineScripts"/MotionCorrection.sh \
+#     "$fMRIFolder"/MotionCorrection \
+#     "$fMRIFolder"/"$NameOffMRI"_gdc \
+#     "$fMRIFolder"/"$ScoutName"_gdc \
+#     "$fMRIFolder"/"$NameOffMRI"_mc \
+#     "$fMRIFolder"/"$MovementRegressor" \
+#     "$fMRIFolder"/"$MotionMatrixFolder" \
+#     "$MotionMatrixPrefix" \
+#     "$MotionCorrectionType"
 
 # EPI Distortion Correction and EPI to T1w Registration
 log_Msg "EPI Distortion Correction and EPI to T1w Registration"
-if [ -e ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased ] ; then
-    ${RUN} rm -r ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
-fi
+# XXX
+# if [ -e ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased ] ; then
+#     ${RUN} rm -r ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
+# fi
 log_Msg "mkdir -p ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased"
 mkdir -p ${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased
-
 ${RUN} ${PipelineScripts}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased.sh \
     --workingdir=${fMRIFolder}/DistortionCorrectionAndEPIToT1wReg_FLIRTBBRAndFreeSurferBBRbased \
     --scoutin=${fMRIFolder}/${ScoutName}_gdc \
@@ -341,33 +340,33 @@ log_Msg "One Step Resampling"
 log_Msg "mkdir -p ${fMRIFolder}/OneStepResampling"
 
 mkdir -p ${fMRIFolder}/OneStepResampling
-${RUN} ${PipelineScripts}/OneStepResampling.sh \
-    --workingdir=${fMRIFolder}/OneStepResampling \
-    --infmri=${fMRIFolder}/${OrigTCSName}.nii.gz \
-    --t1=${AtlasSpaceFolder}/${T1wAtlasName} \
-    --fmriresout=${FinalfMRIResolution} \
-    --fmrifolder=${fMRIFolder} \
-    --fmri2structin=${T1wFolder}/xfms/${fMRI2strOutputTransform} \
-    --struct2std=${AtlasSpaceFolder}/xfms/${AtlasTransform} \
-    --owarp=${AtlasSpaceFolder}/xfms/${OutputfMRI2StandardTransform} \
-    --oiwarp=${AtlasSpaceFolder}/xfms/${Standard2OutputfMRITransform} \
-    --motionmatdir=${fMRIFolder}/${MotionMatrixFolder} \
-    --motionmatprefix=${MotionMatrixPrefix} \
-    --ofmri=${fMRIFolder}/${NameOffMRI}_nonlin \
-    --freesurferbrainmask=${AtlasSpaceFolder}/${FreeSurferBrainMask} \
-    --biasfield=${AtlasSpaceFolder}/${BiasFieldMNI} \
-    --gdfield=${fMRIFolder}/${NameOffMRI}_gdc_warp \
-    --scoutin=${fMRIFolder}/${OrigScoutName} \
-    --scoutgdcin=${fMRIFolder}/${ScoutName}_gdc \
-    --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
-    --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution}
+# ${RUN} ${PipelineScripts}/OneStepResampling.sh \
+#     --workingdir=${fMRIFolder}/OneStepResampling \
+#     --infmri=${fMRIFolder}/${OrigTCSName}.nii.gz \
+#     --t1=${AtlasSpaceFolder}/${T1wAtlasName} \
+#     --fmriresout=${FinalfMRIResolution} \
+#     --fmrifolder=${fMRIFolder} \
+#     --fmri2structin=${T1wFolder}/xfms/${fMRI2strOutputTransform} \
+#     --struct2std=${AtlasSpaceFolder}/xfms/${AtlasTransform} \
+#     --owarp=${AtlasSpaceFolder}/xfms/${OutputfMRI2StandardTransform} \
+#     --oiwarp=${AtlasSpaceFolder}/xfms/${Standard2OutputfMRITransform} \
+#     --motionmatdir=${fMRIFolder}/${MotionMatrixFolder} \
+#     --motionmatprefix=${MotionMatrixPrefix} \
+#     --ofmri=${fMRIFolder}/${NameOffMRI}_nonlin \
+#     --freesurferbrainmask=${AtlasSpaceFolder}/${FreeSurferBrainMask} \
+#     --biasfield=${AtlasSpaceFolder}/${BiasFieldMNI} \
+#     --gdfield=${fMRIFolder}/${NameOffMRI}_gdc_warp \
+#     --scoutin=${fMRIFolder}/${OrigScoutName} \
+#     --scoutgdcin=${fMRIFolder}/${ScoutName}_gdc \
+#     --oscout=${fMRIFolder}/${NameOffMRI}_SBRef_nonlin \
+#     --ojacobian=${fMRIFolder}/${JacobianOut}_MNI.${FinalfMRIResolution}
     
 log_Msg "mkdir -p ${ResultsFolder}"
 mkdir -p ${ResultsFolder}
 
 #now that we have the final MNI fMRI space, resample the T1w-space sebased bias field related outputs
 #the alternative is to add a bunch of optional arguments to OneStepResampling that just do the same thing
-#we need to do this before intensity normalization, as it uses the bias field output
+# we need to do this before intensity normalization, as it uses the bias field output
 if [[ ${DistortionCorrection} == "TOPUP" ]]
 then
     #create MNI space corrected fieldmap images

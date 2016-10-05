@@ -134,6 +134,10 @@ if [ $# -lt 21 ] ; then Usage; exit 1; fi
 
 # parse arguments
 WD=`getopt1 "--workingdir" $@`
+echo "hello"
+echo ${WD}
+echo "hello"
+exit 1
 ScoutInputName=`getopt1 "--scoutin" $@`
 T1wImage=`getopt1 "--t1" $@`
 T1wRestoreImage=`getopt1 "--t1restore" $@`
