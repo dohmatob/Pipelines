@@ -12,7 +12,7 @@ if [ $# -lt 5 ]; then
     echo "bash $0 <StudyFolder> <OutputFolder> <SubjectId> <TaskName> <UnwarpDir>"
     echo""
     echo "Example:"
-    echo "bash $0 /home/elvis/nilearn_data/drago/storage/data/HCP/S500-1 ~/mnt/32-bit-system/home/elvis/hcp_preproc 100307 MOTOR RL"
+    echo "$0 /home/elvis/nilearn_data/drago/storage/data/HCP/S500-1 ~/mnt/32-bit-system/home/elvis/hcp_preproc 100307 MOTOR RL"
     exit 1
 fi
 
