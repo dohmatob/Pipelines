@@ -18,7 +18,7 @@ fi
 
 
 ## Misc
-: ${TBASED:=0}
+: ${T1BASED:=0}
 
 # grab input args
 StudyFolder=$1
@@ -47,6 +47,14 @@ ScoutInputBaseName=`basename ${ScoutInputName}`
 T1wFolder=${SubjectFolder}/T1w # Location of T1w images
 T1wImage=${T1wFolder}/T1w_acpc_dc
 T1wRestoreImage=${T1wFolder}/T1w_acpc_dc_restore_brain
+
+# make sure all input files are present
+for input_file in ${fMRITimeSeries} ${fMRISBRef} ${T1wImage} ${T1wRestoreImage}; do
+    if [ ! -e ${input_file}.nii.gz ]; then
+	echo "Input file ${input_file}.nii.gz present. Qutting..."
+	exit 1
+    fi
+done    
 
 log_Msg "mkdir ${fMRIOutputFolder}"
 mkdir -p "$fMRIOutputFolder"
