@@ -132,7 +132,7 @@ NumFrames=`${FSLDIR}/bin/fslval ${fMRITimeSeries} dim4`
 
 # Apply combined transformations to fMRI (combines gradient non-linearity distortion, motion correction, and registration to T1w space, but keeping fMRI resolution)
 OutputfMRI=${fMRIOutputFolder}/tfMRI_${TaskName}_${Dir}_undistorted_mc
-for T1BASED in 0 1; do
+for T1BASED in 1 0; do
     if [ ${T1BASED} == "1" ]; then
 	OutputfMRI=${OutputfMRI}2T1
     fi
