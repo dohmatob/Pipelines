@@ -125,7 +125,7 @@ NumFrames=`${FSLDIR}/bin/fslval ${fMRITimeSeries} dim4`
 # Apply combined transformations to fMRI (combines gradient non-linearity distortion, motion correction, and registration to T1w space, but keeping fMRI resolution)
 mkdir -p ${DistCorrWD}/prevols
 mkdir -p ${DistCorrWD}/postvols
-# ${FSLDIR}/bin/fslsplit ${fMRITimeSeries} ${DistCorrWD}/prevols/vol -t
+${FSLDIR}/bin/fslsplit ${fMRITimeSeries} ${DistCorrWD}/prevols/vol -t
 FrameMergeSTRING=""
 OutputfMRI=${fMRIOutputFolder}/tfMRI_${TaskName}_${Dir}_undistorted_mc
 if [ ${T1BASED} == "1" ]; then
@@ -160,4 +160,3 @@ if [ ! -e ${OutputfMRI}.nii.gz ]; then
 
     # Merge together results and restore the TR (saved beforehand)
     ${FSLDIR}/bin/fslmerge -tr ${OutputfMRI} $FrameMergeSTRING $TR_vol
-
