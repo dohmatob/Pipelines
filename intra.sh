@@ -123,15 +123,15 @@ TR_vol=`${FSLDIR}/bin/fslval ${fMRITimeSeries} pixdim4 | cut -d " " -f 1`
 NumFrames=`${FSLDIR}/bin/fslval ${fMRITimeSeries} dim4`
 
 # Apply combined transformations to fMRI (combines gradient non-linearity distortion, motion correction, and registration to T1w space, but keeping fMRI resolution)
-mkdir -p ${DistCorrWD}/prevols
-mkdir -p ${DistCorrWD}/postvols
-${FSLDIR}/bin/fslsplit ${fMRITimeSeries} ${DistCorrWD}/prevols/vol -t
-FrameMergeSTRING=""
 OutputfMRI=${fMRIOutputFolder}/tfMRI_${TaskName}_${Dir}_undistorted_mc
 if [ ${T1BASED} == "1" ]; then
     OutputfMRI=${OutputfMRI}2T1
 fi
 if [ ! -e ${OutputfMRI}.nii.gz ]; then
+    mkdir -p ${DistCorrWD}/prevols
+    mkdir -p ${DistCorrWD}/postvols    
+    ${FSLDIR}/bin/fslsplit ${fMRITimeSeries} ${DistCorrWD}/prevols/vol -t
+    FrameMergeSTRING="" 
     k=0
     while [ $k -lt $NumFrames ] ; do
 	vnum=`${FSLDIR}/bin/zeropad $k 4`
