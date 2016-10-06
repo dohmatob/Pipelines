@@ -128,36 +128,36 @@ mkdir -p ${DistCorrWD}/postvols
 # ${FSLDIR}/bin/fslsplit ${fMRITimeSeries} ${DistCorrWD}/prevols/vol -t
 FrameMergeSTRING=""
 OutputfMRI=${fMRIOutputFolder}/tfMRI_${TaskName}_${Dir}_undistorted_mc
-if [ ${T1BASED} = "1" ]; then
+if [ ${T1BASED} == "1" ]; then
     OutputfMRI=${OutputfMRI}2T1
 fi
-echo ${OutputfMRI}
-k=0
-while [ $k -lt $NumFrames ] ; do
-    vnum=`${FSLDIR}/bin/zeropad $k 4`
+if [ ! -e ${OutputfMRI}.nii.gz ]; then
+    k=0
+    while [ $k -lt $NumFrames ] ; do
+	vnum=`${FSLDIR}/bin/zeropad $k 4`
+	
+	if [ ${T1BASED} == "0" ]; then
+	    flirt -in ${DistCorrWD}/prevols/vol${vnum} -ref ${T1wImage} \
+		  -out ${DistCorrWD}/postvols/vol${k} \
+		  -init ${fMRIOutputFolder}/${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} \
+		  -applyxfm
+	else
+	    # combine
+	    ${FSLDIR}/bin/convertwarp --relout --rel --ref=${DistCorrWD}/prevols/vol${vnum} \
+		     --warp1=${DistCorrWD}/${ScoutInputBaseName}_undistorted2T1w_init_warp \
+		     --postmat=${fMRIOutputFolder}/${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} \
+		     --out=${fMRIOutputFolder}/${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp
+	    
+	    # apply
+	    ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${DistCorrWD}/prevols/vol${vnum} \
+		     --warp=${fMRIOutputFolder}/${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp \
+		     --ref=${T1wImage} --out=${DistCorrWD}/postvols/vol${k}
+	fi
+	echo ${DistCorrWD}/postvols/vol${k}.nii.gz
+	FrameMergeSTRING="${FrameMergeSTRING}${DistCorrWD}/postvols/vol${k}.nii.gz " 
+	k=`echo "$k + 1" | bc`
+    done
 
-    if [ ${T1BASED} = "0" ]; then
-	flirt -in ${DistCorrWD}/prevols/vol${vnum} -ref ${T1wImage} \
-	      -out ${DistCorrWD}/postvols/vol${k} \
-	      -init ${fMRIOutputFolder}/${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} \
-	      -applyxfm
-    else
-	# combine
-	${FSLDIR}/bin/convertwarp --relout --rel --ref=${DistCorrWD}/prevols/vol${vnum} \
-		 --warp1=${DistCorrWD}/${ScoutInputBaseName}_undistorted2T1w_init_warp \
-		 --postmat=${fMRIOutputFolder}/${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} \
-		 --out=${fMRIOutputFolder}/${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp
-
-	# apply
-	${FSLDIR}/bin/applywarp --rel --interp=spline --in=${DistCorrWD}/prevols/vol${vnum} \
-		 --warp=${fMRIOutputFolder}/${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp \
-		 --ref=${T1wImage} --out=${DistCorrWD}/postvols/vol${k}
-    fi
-    echo ${DistCorrWD}/postvols/vol${k}.nii.gz
-    FrameMergeSTRING="${FrameMergeSTRING}${DistCorrWD}/postvols/vol${k}.nii.gz " 
-    k=`echo "$k + 1" | bc`
-done
-
-# Merge together results and restore the TR (saved beforehand)
-${FSLDIR}/bin/fslmerge -tr ${OutputfMRI} $FrameMergeSTRING $TR_vol
+    # Merge together results and restore the TR (saved beforehand)
+    ${FSLDIR}/bin/fslmerge -tr ${OutputfMRI} $FrameMergeSTRING $TR_vol
 
