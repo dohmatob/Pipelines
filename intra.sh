@@ -160,3 +160,5 @@ if [ ! -e ${OutputfMRI}.nii.gz ]; then
 
     # Merge together results and restore the TR (saved beforehand)
     ${FSLDIR}/bin/fslmerge -tr ${OutputfMRI} $FrameMergeSTRING $TR_vol
+fi
+echo "${OutputfMRI}.nii.gz"
