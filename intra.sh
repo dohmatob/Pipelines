@@ -72,6 +72,7 @@ fi
 ## Topup distortion correction using a blip-reversed SE pair "fieldmap" sequence
 TopupConfig="global/config/b02b0.cnf"
 DwellTime="0.00058"
+UseJacobian="true"
 GradientDistortionCoeffs="NONE" # Set to NONE to skip gradient distcorr
 DistCorrWD=${fMRIOutputFolder}/DistortionCorrection
 mkdir -p ${DistCorrWD}
