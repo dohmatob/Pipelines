@@ -12,13 +12,10 @@ if [ $# -lt 5 ]; then
     echo "bash $0 <StudyFolder> <OutputFolder> <SubjectId> <TaskName> <UnwarpDir>"
     echo""
     echo "Example:"
+    echo 'for task in MOTOR LANGUAGE EMOTION RELATIONAL SOCIAL GAMBLING WM; do for x in /storage/data/HCP/S500-1/*/unprocessed/3T/tfMRI_MOTOR_LR/*_3T_tfMRI_MOTOR_LR.nii.gz; do sid=$(basename $(dirname $(dirname $(dirname $(dirname $x))))); echo $sid $task; done; done | xargs -n 2 -P 32 -i bash -c './intra.sh /storage/data/HCP/S500-1 /storage/workspace/elvis/hcp_new_preproc $@ LR' _ {}'
     echo "$0 /home/elvis/nilearn_data/drago/storage/data/HCP/S500-1 ~/mnt/32-bit-system/home/elvis/hcp_preproc 100307 MOTOR RL"
     exit 1
 fi
-
-
-## Misc
-: ${T1BASED:=0}
 
 # grab input args
 StudyFolder=$1
@@ -47,6 +44,7 @@ ScoutInputBaseName=`basename ${ScoutInputName}`
 T1wFolder=${SubjectFolder}/T1w # Location of T1w images
 T1wImage=${T1wFolder}/T1w_acpc_dc
 T1wRestoreImage=${T1wFolder}/T1w_acpc_dc_restore_brain
+FinalResolution=1.5  # downsample t1 images to this res; set to "orig" if you prefer original res
 
 # make sure all input files are present
 for input_file in ${fMRITimeSeries} ${fMRISBRef} ${T1wImage} ${T1wRestoreImage}; do
@@ -56,12 +54,13 @@ for input_file in ${fMRITimeSeries} ${fMRISBRef} ${T1wImage} ${T1wRestoreImage};
     fi
 done    
 
-log_Msg "mkdir ${fMRIOutputFolder}"
+log_Msg "make output dirs"
 mkdir -p "$fMRIOutputFolder"
+mkdir -p "$T1wOutputFolder"
 
 ## Motion Correction
-MovementRegressor="Movement_Regressors" #No extension, .txt appended
-MotionMatrixFolder="MotionMatrices"
+MovementRegressor=${fMRIOutputFolder}/"Movement_Regressors" #No extension, .txt appended
+MotionMatrixFolder=${fMRIOutputFolder}/"MotionMatrices"
 MotionMatrixPrefix="MAT_"
 mkdir -p ${fMRIOutputFolder}/MotionCorrection
 if [ ! -e ${fMRIOutputFolder}/MotionCorrection/${fMRIName}_mc.par ]; then
@@ -70,10 +69,12 @@ if [ ! -e ${fMRIOutputFolder}/MotionCorrection/${fMRIName}_mc.par ]; then
 	${fMRITimeSeries} \
 	${fMRISBRef} \
 	${fMRIOutputFolder}/${fMRIName}_mc \
-	${fMRIOutputFolder}/${MovementRegressor} \
-	${fMRIOutputFolder}/${MotionMatrixFolder} \
+	${MovementRegressor} \
+	${MotionMatrixFolder} \
 	${MotionMatrixPrefix} \
 	"MCFLIRT"
+else
+    log_Msg "motion correction"
 fi
 
 
@@ -97,31 +98,46 @@ if [ ! -e ${DistCorrWD}/WarpField.nii.gz ]; then
         --gdcoeffs=${GradientDistortionCoeffs} \
         --topupconfig=${TopupConfig} \
         --usejacobian=${UseJacobian}
+else
+    log_Msg "topup fieldmap generation and gradient unwarping"
 fi
 
 # create a spline interpolated image of scout (distortion corrected in same space)
 log_Msg "create a spline interpolated image of scout (distortion corrected in same space)"
-${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${ScoutInputName} -w ${DistCorrWD}/WarpField -o ${DistCorrWD}/${ScoutInputBaseName}_undistorted
+if [ ! -e ${DistCorrWD}/${ScoutInputBaseName}_undistorted.nii.gz ]; then
+    ${FSLDIR}/bin/applywarp --rel --interp=spline -i ${ScoutInputName} -r ${ScoutInputName} \
+	-w ${DistCorrWD}/WarpField -o ${DistCorrWD}/${ScoutInputBaseName}_undistorted
+fi
+${FSLDIR}/bin/imcp ${DistCorrWD}/${ScoutInputBaseName}_undistorted ${fMRIOutputFolder}
 
 
 ## Coregistration: Use epi_ref (freesurfer-less BBR) to register EPI to T1w space
 dof=6
 
-# register undistorted scout image to T1w. This is just an initial registration, refined later in
-# this script, but it is actually pretty good
-log_Msg "register undistorted scout image to T1w"
-if [ ! -e ${DistCorrWD}/${ScoutInputBaseName}_undistorted2T1w_init.mat ]; then
-    global/scripts/epi_reg_dof --dof=${dof} --epi=${DistCorrWD}/${ScoutInputBaseName}_undistorted --t1=${T1wImage} --t1brain=${T1wRestoreImage} --out=${DistCorrWD}/${ScoutInputBaseName}_undistorted2T1w_init
+# downsample t1 images to for speed
+if [ ! ${FinalResolution} == "orig" ]; then
+    for t1 in ${T1wImage} ${T1wRestoreImage}; do
+	log_Msg "resample ${t1}.nii.gz to ${FinalResolution}mm isotropic"
+	resampled=${T1wOutputFolder}/`basename ${t1}`${FinalResolution}mm
+	if [ ! -e ${resampled}.nii.gz ]; then
+	    ${FSLDIR}/bin/flirt -in ${t1} -ref ${t1} -applyisoxfm ${FinalResolution} -noresampblur -o ${resampled}
+	fi
+    done
+    T1wImageResampled=${T1wOutputFolder}/`basename ${T1wImage}`${FinalResolution}mm
+    T1wRestoreImageResampled=${T1wOutputFolder}/`basename ${T1wRestoreImage}`${FinalResolution}mm
+else
+    T1wImageResampled=${T1wImage}
+    T1wRestoreImageResampled=${T1wRestoreImage}
 fi
 
-# copy the initial registration into the final affine's filename, as it is pretty good
-# we need something to get between the spaces to compute an initial bias field
-cp ${DistCorrWD}/${ScoutInputBaseName}_undistorted2T1w_init.mat ${DistCorrWD}/fMRI2str.mat
-
-# generate combined warpfields and spline interpolated images + apply bias field correction
-log_Msg "generate combined warpfields and spline interpolated images and apply bias field correction"
-if [ ! -e ${DistCorrWD}/${ScoutInputBaseName}_undistorted2T1w_init_warp.nii.gz ]; then
-    ${FSLDIR}/bin/convertwarp --relout --rel -r ${T1wImage} --warp1=${DistCorrWD}/WarpField.nii.gz --postmat=${DistCorrWD}/${ScoutInputBaseName}_undistorted2T1w_init.mat -o ${DistCorrWD}/${ScoutInputBaseName}_undistorted2T1w_init_warp
+# register undistorted scout image to T1w. This is just an initial registration, 
+# refined later in this script, but it is actually pretty good
+CoregSBRef=${DistCorrWD}/${ScoutInputBaseName}_undistorted2T1w${FinalResolution}mm_init
+SBRef2T1wTransformMat=${CoregSBRef}.mat
+log_Msg "Coregister undistorted scout image to (resampled) t1 space"
+if [ ! -e ${SBRef2T1wTransformMat} ]; then
+    global/scripts/epi_reg_dof --dof=${dof} --epi=${DistCorrWD}/${ScoutInputBaseName}_undistorted --t1=${T1wImageResampled} \
+	--t1brain=${T1wRestoreImageResampled} --out=${CoregSBRef}
 fi
 
 
@@ -130,11 +146,13 @@ fi
 TR_vol=`${FSLDIR}/bin/fslval ${fMRITimeSeries} pixdim4 | cut -d " " -f 1`
 NumFrames=`${FSLDIR}/bin/fslval ${fMRITimeSeries} dim4`
 
-# Apply combined transformations to fMRI (combines gradient non-linearity distortion, motion correction, and registration to T1w space, but keeping fMRI resolution)
-for T1BASED in 1 0; do
+# Apply combined transformations to fMRI (combines gradient non-linearity distortion,
+# motion correction, and registration to T1w space, but keeping fMRI resolution)
+log_Msg "1-step resampling of fMRI"
+for t1_based in 0 1; do
     OutputfMRI=${fMRIOutputFolder}/tfMRI_${TaskName}_${Dir}_undistorted_mc
-    if [ ${T1BASED} == "1" ]; then
-	OutputfMRI=${OutputfMRI}2T1
+    if [ "${t1_based}" == "1" ]; then
+	OutputfMRI=${OutputfMRI}2T1w${FinalResolution}mm
     fi
     if [ ! -e ${OutputfMRI}.nii.gz ]; then
 	mkdir -p ${DistCorrWD}/prevols
@@ -144,29 +162,28 @@ for T1BASED in 1 0; do
 	k=0
 	while [ $k -lt $NumFrames ] ; do
 	    vnum=`${FSLDIR}/bin/zeropad $k 4`
-	    
-	    if [ ${T1BASED} == "0" ]; then
-		flirt -in ${DistCorrWD}/prevols/vol${vnum} -ref ${T1wImage} \
-		      -out ${DistCorrWD}/postvols/vol${k} \
-		      -init ${fMRIOutputFolder}/${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} \
-		      -applyxfm
+
+	    # combine transformations from motion correction and BBR
+	    if [ "${t1_based}" == "1" ]; then
+		Affine=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_all_affine.mat
+		Ref=${T1wImageResampled}
+		${FSLDIR}/bin/convert_xfm -omat ${Affine} \
+		    -concat ${SBRef2T1wTransformMat} ${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}
 	    else
-		# combine
-		${FSLDIR}/bin/convertwarp --relout --rel --ref=${DistCorrWD}/prevols/vol${vnum} \
-			 --warp1=${DistCorrWD}/${ScoutInputBaseName}_undistorted2T1w_init_warp \
-			 --postmat=${fMRIOutputFolder}/${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum} \
-			 --out=${fMRIOutputFolder}/${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp
-		
-		# apply
-		${FSLDIR}/bin/applywarp --rel --interp=spline --in=${DistCorrWD}/prevols/vol${vnum} \
-			 --warp=${fMRIOutputFolder}/${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}_gdc_warp \
-			 --ref=${T1wImage} --out=${DistCorrWD}/postvols/vol${k}
+		Affine=${MotionMatrixFolder}/${MotionMatrixPrefix}${vnum}
+		Ref=${DistCorrWD}/${ScoutInputBaseName}_undistorted
 	    fi
+
+	    # apply combined warp fields
+	    ${FSLDIR}/bin/applywarp --rel --interp=spline --in=${DistCorrWD}/prevols/vol${vnum} \
+		--warp=${DistCorrWD}/WarpField --ref=${Ref} --out=${DistCorrWD}/postvols/vol${k} \
+		--postmat=${Affine}
+		
 	    echo ${DistCorrWD}/postvols/vol${k}.nii.gz
 	    FrameMergeSTRING="${FrameMergeSTRING}${DistCorrWD}/postvols/vol${k}.nii.gz " 
 	    k=`echo "$k + 1" | bc`
 	done
-
+	
 	# Merge together results and restore the TR (saved beforehand)
 	${FSLDIR}/bin/fslmerge -tr ${OutputfMRI} $FrameMergeSTRING $TR_vol
     fi
